@@ -55,12 +55,12 @@
             node.className = arr.join(' ');
         }
         ,fixEvent: function(evt){
-            evt = evt || event; 
+            evt = evt || event;
             if(!evt.target)evt.target = evt.srcElement;
             if(!evt.keyCode)evt.keyCode = evt.which || evt.charCode;
             if(!evt.pageX){//only for IE
-               evt.pageX = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-               evt.pageY = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+                evt.pageX = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                evt.pageY = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop;
             }
             return evt;
         }
@@ -77,7 +77,7 @@
             delete options.keepSquare;
         }
         for(var p in options){
-            if(options[p])this[p] = options[p];
+            if(options[p] !== null)this[p] = options[p];
         }
         this.domNode = container || util.create('div');
         this._init();
@@ -127,6 +127,7 @@
                 //TODO: onerror?
                 this.imageNode.onload = function(){
                     self._setSize(this.offsetWidth, this.offsetHeight);
+                    self.onRender()
                 }
             }
             this.imageNode.src = url;
@@ -155,7 +156,7 @@
                 if(w2 >= width)w2 = width;
                 if(h2 >= height)h2 = height;
                 util.style(node, {width: w2 + 'px', height: h2 + 'px'});
-                
+
                 var rateX =  w2/info.w
                     ,rateY = h2/info.h
                     ;
@@ -172,13 +173,29 @@
             // summary:
             //  Get the cropping infomation. Such as being used by server side for real cropping.
             return {
-                w: this.cropNode.offsetWidth - 2    //2 is hard code border width
-                ,h: this.cropNode.offsetHeight - 2
+                w: this.cropNode.offsetWidth
+                ,h: this.cropNode.offsetHeight
                 ,l: parseInt(util.style(this.cropNode, 'left'))
                 ,t: parseInt(util.style(this.cropNode, 'top'))
                 ,cw: this.domNode.offsetWidth //container width
                 ,ch: this.domNode.offsetHeight //container height
+                ,nw: this.imageNode.naturalWidth
+                ,nh: this.imageNode.naturalHeight
             };
+        }
+
+        ,setCropZone: function(x, y, w, h) {
+            // summary:
+            //  Set the crop zone and update archors and blocks
+            var style = this.cropNode.style;
+
+            style.left   = x + "px";
+            style.top    = y + "px";
+            style.width  = w + "px";
+            style.height = h + "px";
+
+            this._updateUI();
+            this.onChange(this.getInfo());
         }
 
         ,onChange: function() {
@@ -189,8 +206,15 @@
             //Event:
             //    When mouseup.
         }
+        ,onRender: function() {
+            //Event:
+            //    When image render.
+
+        }
         ,destroy: function(){
-            //TODO: destroy self to release memory
+            this.cropNode.removeEventListener('mousedown', this._onMouseDown, false);
+            document.removeEventListener('mouseup', this._onMouseUp, false);
+            document.removeEventListener('mousemove', this._onMouseMove, false);
         }
 
         //Private APIs
@@ -203,7 +227,7 @@
             util.connect(document, 'mouseup', this, '_onMouseUp');
             util.connect(document, 'mousemove', this, '_onMouseMove');
             this.image && this.setImage(this.image);
-            
+
             if(this.preview){
                 var self = this;
                 util.each(this.preview, function(node){
@@ -237,22 +261,35 @@
         }
 
         ,_setSize: function(w, h) {
+            var w2, h2, scale, scaleX = 1, scaleY = 1;
+
+            if(this.maxWidth && this.maxWidth < w) {
+                scaleX =  this.maxWidth / w;
+            }
+
+            if(this.maxHeight && this.maxHeight < h) {
+                scaleY =  this.maxHeight / h;
+            }
+
+            scale = Math.min(scaleX, scaleY);
+
+            w *= scale;
+            h *= scale;
 
             this.domNode.style.width = w + 'px';
             this.domNode.style.height = h + 'px';
 
-            var w2, h2;
             if (this.initialSize) {
                 var m = Math.min(w, h, this.initialSize);
-                w2 = h2 = m - 2 + 'px';
+                w2 = h2 = m + 'px';
             }else{
-                w2 = w - this.gap * 2 - 2;
-                h2 = h - this.gap * 2 - 2;
+                w2 = w - this.gap * 2;
+                h2 = h - this.gap * 2;
                 if(this.ratio){
                     var _w2 = h2*this.ratio, _h2 = w2/this.ratio;
                     if(w2 > _w2)w2 = _w2;
                     if(h2 > _h2)h2 = _h2;
-                   
+
                 }
                 w2 += 'px';
                 h2 += 'px';
@@ -270,9 +307,8 @@
 
             s.left = l + 'px';
             s.top = t + 'px';
-     
-            this._posArchors();
-            this._posBlocks();
+
+            this._updateUI();
             this.onChange(this.getInfo());
         }
 
@@ -285,8 +321,8 @@
             var a = this._archors,
                 w = this.cropNode.offsetWidth,
                 h = this.cropNode.offsetHeight;
-            w = w / 2 - 4 + 'px';
-            h = h / 2 - 4 + 'px';
+            w = w / 2 + 'px';
+            h = h / 2 + 'px';
             a.t.style.left = a.b.style.left = w;
             a.l.style.top = a.r.style.top = h;
         }
@@ -330,8 +366,8 @@
             this.startedPos = {
                 x: e.pageX
                 ,y: e.pageY
-                ,h: n.offsetHeight - 2 //2 is border width
-                ,w: n.offsetWidth - 2
+                ,h: n.offsetHeight
+                ,w: n.offsetWidth
                 ,l: parseInt(util.style(n, 'left'))
                 ,t: parseInt(util.style(n, 'top'))
             }
@@ -382,7 +418,7 @@
             s.left = l + 'px';
             s.top = t + 'px'
         }
-        
+
         ,_doResize: function(e) {
             var m = this.dragging
                 ,s = this.cropNode.style
@@ -455,7 +491,7 @@
                 if (p0.l + p0.w + dx <= this.domNode.offsetWidth) {
                     s.width = p0.w + dx + 'px';
                 } else {
-                    s.width = this.domNode.offsetWidth - p0.l - 2 + 'px';
+                    s.width = this.domNode.offsetWidth - p0.l + 'px';
                 }
             }
             if (/b/.test(m)) {
@@ -463,7 +499,7 @@
                 if (p0.t + p0.h + dy <= this.domNode.offsetHeight) {
                     s.height = p0.h + dy + 'px';
                 } else {
-                    s.height = this.domNode.offsetHeight - p0.t - 2 + 'px';
+                    s.height = this.domNode.offsetHeight - p0.t + 'px';
                 }
             }
 
