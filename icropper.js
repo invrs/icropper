@@ -173,8 +173,8 @@
             // summary:
             //  Get the cropping infomation. Such as being used by server side for real cropping.
             return {
-                w: this.cropNode.offsetWidth
-                ,h: this.cropNode.offsetHeight
+                w: this.cropNode.offsetWidth - 2
+                ,h: this.cropNode.offsetHeight - 2
                 ,l: parseInt(util.style(this.cropNode, 'left'))
                 ,t: parseInt(util.style(this.cropNode, 'top'))
                 ,cw: this.domNode.offsetWidth //container width
@@ -281,10 +281,10 @@
 
             if (this.initialSize) {
                 var m = Math.min(w, h, this.initialSize);
-                w2 = h2 = m + 'px';
+                w2 = h2 = m - 2 + 'px';
             }else{
-                w2 = w - this.gap * 2;
-                h2 = h - this.gap * 2;
+                w2 = w - this.gap * 2 - 2;
+                h2 = h - this.gap * 2 - 2;
                 if(this.ratio){
                     var _w2 = h2*this.ratio, _h2 = w2/this.ratio;
                     if(w2 > _w2)w2 = _w2;
@@ -321,8 +321,8 @@
             var a = this._archors,
                 w = this.cropNode.offsetWidth,
                 h = this.cropNode.offsetHeight;
-            w = w / 2 + 'px';
-            h = h / 2 + 'px';
+            w = w / 2 - 4 + 'px';
+            h = h / 2 - 4 + 'px';
             a.t.style.left = a.b.style.left = w;
             a.l.style.top = a.r.style.top = h;
         }
@@ -366,8 +366,8 @@
             this.startedPos = {
                 x: e.pageX
                 ,y: e.pageY
-                ,h: n.offsetHeight
-                ,w: n.offsetWidth
+                ,h: n.offsetHeight - 2
+                ,w: n.offsetWidth - 2
                 ,l: parseInt(util.style(n, 'left'))
                 ,t: parseInt(util.style(n, 'top'))
             }
@@ -491,7 +491,7 @@
                 if (p0.l + p0.w + dx <= this.domNode.offsetWidth) {
                     s.width = p0.w + dx + 'px';
                 } else {
-                    s.width = this.domNode.offsetWidth - p0.l + 'px';
+                    s.width = this.domNode.offsetWidth - p0.l - 2 + 'px';
                 }
             }
             if (/b/.test(m)) {
@@ -499,7 +499,7 @@
                 if (p0.t + p0.h + dy <= this.domNode.offsetHeight) {
                     s.height = p0.h + dy + 'px';
                 } else {
-                    s.height = this.domNode.offsetHeight - p0.t + 'px';
+                    s.height = this.domNode.offsetHeight - p0.t - 2 + 'px';
                 }
             }
 
