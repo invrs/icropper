@@ -79,6 +79,8 @@
         for(var p in options){
             if(options[p] !== null)this[p] = options[p];
         }
+        if(this.maxWidth!==null)this.maxWidth+=2;
+        if(this.maxHeight!==null)this.maxHeight+=2;
         this.domNode = container || util.create('div');
         this._init();
     }
